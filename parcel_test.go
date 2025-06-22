@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,17 +58,17 @@ func TestAddGetDelete(t *testing.T) {
 
 	parcelDb, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, 1, parcelDb.Number)
-	require.Equal(t, id, parcelDb.Number)
-	require.Equal(t, parcel.Client, parcelDb.Client)
-	require.Equal(t, parcel.Status, parcelDb.Status)
-	require.Equal(t, parcel.Address, parcelDb.Address)
-	require.Equal(t, parcel.CreatedAt, parcelDb.CreatedAt)
+	assert.Equal(t, id, parcelDb.Number)
+	assert.Equal(t, parcel.Client, parcelDb.Client)
+	assert.Equal(t, parcel.Status, parcelDb.Status)
+	assert.Equal(t, parcel.Address, parcelDb.Address)
+	assert.Equal(t, parcel.CreatedAt, parcelDb.CreatedAt)
 
-	err = store.Delete(1)
+	err = store.Delete(id)
 	require.NoError(t, err)
-	_, err = store.Get(1)
-	require.Error(t, err) 
+	_, err = store.Get(id)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 // TestSetAddress проверяет обновление адреса
@@ -86,7 +87,7 @@ func TestSetAddress(t *testing.T) {
 
 	newParcel, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, newAddress, newParcel.Address)
+	assert.Equal(t, newAddress, newParcel.Address)
 }
 
 // TestSetStatus проверяет обновление статуса
@@ -105,7 +106,7 @@ func TestSetStatus(t *testing.T) {
 
 	newParcel, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, ParcelStatusSent, newParcel.Status)
+	assert.Equal(t, ParcelStatusSent, newParcel.Status)
 }
 
 func TestGetByClient(t *testing.T) {
@@ -129,22 +130,18 @@ func TestGetByClient(t *testing.T) {
 		id, err := store.Add(parcels[i])
 		require.NoError(t, err)
 		require.NotZero(t, id)
-		require.Equal(t, i+1, id)
+		assert.Equal(t, i+1, id)
 		parcels[i].Number = id
 		parcelMap[id] = parcels[i]
 	}
 
 	storedParcels, err := store.GetByClient(client)
 	require.NoError(t, err)
-	require.Len(t, storedParcels, len(parcels))
-	
+	assert.Len(t, storedParcels, len(parcels))
+
 	for _, parcel := range storedParcels {
 		expectedParcel, exists := parcelMap[parcel.Number]
-		require.True(t, exists)
-		require.Equal(t, expectedParcel.Number, parcel.Number)
-		require.Equal(t, expectedParcel.Client, parcel.Client)
-		require.Equal(t, expectedParcel.Address, parcel.Address)
-		require.Equal(t, expectedParcel.CreatedAt, parcel.CreatedAt)
-		require.Equal(t, expectedParcel.Status, parcel.Status)
+		assert.True(t, exists)
+		assert.Equal(t, expectedParcel, parcel)
 	}
 }
